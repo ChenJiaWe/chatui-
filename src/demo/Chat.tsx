@@ -1,5 +1,13 @@
 import React from "react";
 import { DemoPage, DemoSection } from "../components";
+import chatAvatar from "../assets/avatar.png";
+import meAvatar from "../assets/me.png";
+import guessImg from "../assets/guess.png";
+import functionImg from "../assets/function.png";
+import loginImg from "../assets/login.png";
+import questionImg from "../assets/question.png";
+import moreImg from "../assets/more.png";
+import robotImg from "../assets/robot.png";
 import Chat, {
   Bubble,
   MessageProps,
@@ -15,44 +23,56 @@ import Chat, {
   FlexItem,
   ScrollView,
   ToolbarItemProps,
+  Image,
+  CardMedia,
 } from "@chatui/core";
 import OrderSelector from "./OrdderSelector";
+import { useNavigate } from "react-router-dom";
 
 type MessageWithoutId = Omit<MessageProps, "_id">;
 
-const initialMessages: MessageWithoutId[] = [
+const skillArr = [
   {
-    type: "system",
-    content: { text: "88VIP专属智能客服小蜜 为您服务" },
+    title: "登录问题",
+    src: loginImg,
   },
   {
-    type: "text",
-    content: { text: "Hi，我是你的专属智能助理小蜜，有问题请随时找我哦~" },
-    user: {
-      avatar: "//gw.alicdn.com/tfs/TB1DYHLwMHqK1RjSZFEXXcGMXXa-56-62.svg",
-      name: "小小蜜",
-    },
-    createdAt: Date.now(),
-    hasTime: true,
+    title: "功能问题",
+    src: functionImg,
+  },
+  {
+    title: "问题分类",
+    src: questionImg,
+  },
+  {
+    title: "更多问题",
+    src: moreImg,
+  },
+];
+
+const initialMessages: MessageWithoutId[] = [
+  {
+    type: "help",
+    content: { text: "88VIP专属智能客服小蜜 为您服务" },
+  },
+
+  {
+    type: "skill-cards",
   },
   {
     type: "guess-you",
-  },
-  {
-    type: "skill-cards",
+    user: {
+      avatar: chatAvatar,
+    },
+    createdAt: Date.now(),
+    hasTime: true,
   },
   {
     type: "text",
     content: { text: "小蜜我要查看我的物流信息" },
     position: "right",
     user: {
-      avatar: "//gw.alicdn.com/tfs/TB1DYHLwMHqK1RjSZFEXXcGMXXa-56-62.svg",
-    },
-  },
-  {
-    type: "image",
-    content: {
-      picUrl: "//img.alicdn.com/tfs/TB1p_nirYr1gK0jSZR0XXbP8XXa-300-300.png",
+      avatar: meAvatar,
     },
   },
   {
@@ -65,49 +85,11 @@ const initialMessages: MessageWithoutId[] = [
 
 const defaultQuickReplies = [
   {
-    icon: "shopping-bag",
-    name: "咨询订单问题（高亮）",
-    code: "orderSelector",
+    icon: "keyboard-circle",
+    name: "服务评价",
+    code: "evaluation",
     isHighlight: true,
   },
-  {
-    icon: "shopping-bag",
-    name: "如何申请退款（高亮）",
-    code: "orderSelector",
-    isHighlight: true,
-  },
-  {
-    icon: "message",
-    name: "联系人工服务（高亮+新）",
-    code: "q1",
-    isNew: true,
-    isHighlight: true,
-  },
-  {
-    name: "质量问题（新）",
-    code: "q3",
-    isNew: true,
-  },
-  {
-    name: "卖家文案",
-    code: "q4",
-  },
-  {
-    name: "5强快捷短语",
-    code: "q5",
-  },
-  {
-    name: "6弱快捷短语",
-    code: "q6",
-  },
-];
-
-const skillList = [
-  { title: "话费充值", desc: "智能充值智能充值" },
-  { title: "评价管理", desc: "我的评价" },
-  { title: "联系商家", desc: "急速联系" },
-  { title: "红包卡券", desc: "使用优惠" },
-  { title: "修改地址", desc: "修改地址" },
 ];
 
 const toolbar = [
@@ -144,6 +126,7 @@ export default () => {
     useMessages(initialMessages);
   const { quickReplies, replace } = useQuickReplies(defaultQuickReplies);
   const msgRef = React.useRef(null);
+  const navigate = useNavigate();
 
   window.appendMsg = appendMsg;
   window.msgRef = msgRef;
@@ -166,7 +149,7 @@ export default () => {
       setTimeout(() => {
         appendMsg({
           type: "text",
-          content: { text: "亲，您遇到什么问题啦？请简要描述您的问题~" },
+          content: { text: "暂时无法解答，您可以反馈问题，开发会及时帮您解决" },
         });
       }, 1000);
     }
@@ -296,9 +279,38 @@ export default () => {
 
   function renderMessageContent(msg: MessageProps) {
     const { type, content } = msg;
-
     // 根据消息类型来渲染
     switch (type) {
+      case "help":
+        return (
+          <div
+            style={{
+              display: "flex",
+              width: "100%",
+              alignContent: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <div>
+              <h3
+                style={{
+                  fontSize: 16,
+                }}
+              >
+                您好，请问有什么可以帮助您？
+              </h3>
+              <span
+                style={{
+                  fontSize: 14,
+                  color: "#777",
+                }}
+              >
+                智能小歌为您
+              </span>
+            </div>
+            <Image src={robotImg} />
+          </div>
+        );
       case "text":
         return <Bubble content={content.text} />;
       case "guess-you":
@@ -307,26 +319,36 @@ export default () => {
             <Flex>
               <div className="guess-you-aside">
                 <h1>猜你想问</h1>
+                <Image
+                  className="guess-you-aside-img"
+                  src={guessImg}
+                  alt="图片名"
+                />
               </div>
               <FlexItem>
                 <List>
                   <ListItem
-                    content="我的红包退款去哪里?"
+                    content="登录遇到问题"
                     as="a"
                     rightIcon="chevron-right"
                   />
                   <ListItem
-                    content="我的红包退款去哪里?"
+                    content="登录遇到问题"
                     as="a"
                     rightIcon="chevron-right"
                   />
                   <ListItem
-                    content="如何修改评价?"
+                    content="登录遇到问题"
                     as="a"
                     rightIcon="chevron-right"
                   />
                   <ListItem
-                    content="物流问题咨询"
+                    content="我遇到了其他问题"
+                    as="a"
+                    rightIcon="chevron-right"
+                  />
+                  <ListItem
+                    content="我遇到了其他问题"
                     as="a"
                     rightIcon="chevron-right"
                   />
@@ -337,17 +359,16 @@ export default () => {
         );
       case "skill-cards":
         return (
-          <ScrollView
-            className="skill-cards"
-            data={skillList}
-            fullWidth
-            renderItem={(item) => (
-              <Card>
-                <CardTitle>{item.title}</CardTitle>
-                <CardText>{item.desc}</CardText>
-              </Card>
-            )}
-          />
+          <Card className="skill-chat-cards">
+            {skillArr.map((val) => {
+              return (
+                <div className="skill-chat-card">
+                  <CardMedia className="card-media" image={val.src} />
+                  <CardTitle>{val.title}</CardTitle>
+                </div>
+              );
+            })}
+          </Card>
         );
       case "order-selector":
         return <OrderSelector />;
@@ -364,7 +385,7 @@ export default () => {
 
   return (
     <DemoPage>
-      <div style={{ height: "calc(100vh - 48px)", marginTop: "-12px" }}>
+      <div style={{ height: "calc(100vh - 48px)" }}>
         <Chat
           onRefresh={handleRefresh}
           navbar={{
@@ -382,9 +403,14 @@ export default () => {
                 title: "More",
               },
             ],
-            title: "智能助理",
+            title: "智能客服",
           }}
-          rightAction={{ icon: "compass" }}
+          rightAction={{
+            icon: "compass",
+            onClick: (e) => {
+              navigate("/suggestion");
+            },
+          }}
           toolbar={toolbar}
           messagesRef={msgRef}
           onToolbarClick={handleToolbarClick}
