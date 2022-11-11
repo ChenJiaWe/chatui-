@@ -9,21 +9,25 @@ export const request = async ({
   data = {},
   method = "get",
 }: IParams) => {
-  if (!url) {
-    return;
+  try {
+    if (!url) {
+      return;
+    }
+    let body: any = JSON.stringify(data);
+    if (method.toUpperCase() === "GET") {
+      body = null;
+    }
+    url =
+      url[0] !== "/"
+        ? "http://150.158.33.124:1234/faq/" + url
+        : "http://150.158.33.124:1234/faq" + url;
+    const res = await fetch(url, {
+      method,
+      cache: "no-cache",
+      body,
+    });
+    return res.json();
+  } catch (error) {
+    throw error;
   }
-  let body: any = JSON.stringify(data);
-  if (method.toUpperCase() === "GET") {
-    body = null;
-  }
-  url =
-    url[0] !== "/"
-      ? "http://150.158.33.124:1234/faq/" + url
-      : "http://150.158.33.124:1234/faq" + url;
-  const res = await fetch(url, {
-    method,
-    cache: "no-cache",
-    body,
-  });
-  return res.json();
 };

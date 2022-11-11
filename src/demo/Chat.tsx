@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { DemoPage, DemoSection } from "../components";
 import chatAvatar from "../assets/avatar.png";
 import meAvatar from "../assets/me.png";
@@ -32,23 +32,6 @@ import { request } from "../utils/constant";
 
 type MessageWithoutId = Omit<MessageProps, "_id">;
 
-// fetch("http://150.158.33.124:1234/faq/management/list", {
-//   method: "GET",
-//   cache: "no-cache",
-// })
-//   .then((res) => {
-//     return res.json();
-//   })
-//   .then((data) => {
-//     console.log(data);
-//   });
-
-const data = await request({
-  url: "/management/list",
-  method: "get",
-});
-console.log(data);
-
 const skillArr = [
   {
     title: "登录问题",
@@ -76,6 +59,8 @@ const initialMessages: MessageWithoutId[] = [
 
   {
     type: "skill-cards",
+    createdAt: Date.now(),
+    hasTime: true,
   },
   {
     type: "guess-you",
@@ -85,20 +70,22 @@ const initialMessages: MessageWithoutId[] = [
     createdAt: Date.now(),
     hasTime: true,
   },
-  {
-    type: "text",
-    content: { text: "小蜜我要查看我的物流信息" },
-    position: "right",
-    user: {
-      avatar: meAvatar,
-    },
-  },
-  {
-    type: "system",
-    content: {
-      text: "由于您长时间未说话或退出小蜜（离开页面、锁屏等）已自动结束本次服务",
-    },
-  },
+  // {
+  //   type: "text",
+  //   content: { text: "小蜜我要查看我的物流信息" },
+  //   position: "right",
+  //   user: {
+  //     avatar: meAvatar,
+  //   },
+  //   createdAt: Date.now(),
+  //   hasTime: true,
+  // },
+  // {
+  //   type: "system",
+  //   content: {
+  //     text: "由于您长时间未说话或退出小蜜（离开页面、锁屏等）已自动结束本次服务",
+  //   },
+  // },
 ];
 
 const defaultQuickReplies = [
@@ -138,45 +125,116 @@ const toolbar = [
   },
 ];
 
+const reply = async (val: string) => {
+  const res = await request({
+    url: `/dialogue/ask?question=${val.trim()}`,
+    method: "get",
+  });
+  if (res?.data) {
+    return res?.data?.answerList || [];
+  }
+};
+
+const answerCountPlus = async (qaId: number) => {
+  const res = await request({
+    url: `/management/add/${qaId}`,
+    method: "put",
+  });
+  if (res?.data) {
+    return res?.data?.answerList || [];
+  }
+};
+
+interface IGuessQuestion {
+  standardQuestion: string;
+  textValue: string;
+  type: string;
+  inUse: boolean;
+  creatorId: number;
+  creatorName: string;
+  askCount: number;
+  createdAt: string;
+  updatedAt: string;
+  id: number;
+}
+
 export default () => {
   // 消息列表
   const { messages, appendMsg, setTyping, prependMsgs } =
     useMessages(initialMessages);
   const { quickReplies, replace } = useQuickReplies(defaultQuickReplies);
+  const [guessQuestion, setGuessQuestion] = useState<IGuessQuestion[]>([]);
   const msgRef = React.useRef(null);
   const navigate = useNavigate();
 
   window.appendMsg = appendMsg;
   window.msgRef = msgRef;
-
+  useEffect(() => {
+    const initGuessQuestin = async () => {
+      const res = await request({
+        url: "/management/top_list",
+        method: "get",
+      });
+      if (res?.data) {
+        setGuessQuestion(res.data);
+      }
+    };
+    initGuessQuestin();
+  }, []);
   // 发送回调
-  function handleSend(type: string, val: string) {
+  async function handleSend(type: string, val: string) {
     if (type === "text" && val.trim()) {
-      // TODO: 发送请求
       appendMsg({
         type: "text",
         content: { text: val },
         position: "right",
+        user: {
+          avatar: meAvatar,
+        },
+        createdAt: Date.now(),
+        hasTime: true,
       });
 
       setTimeout(() => {
         setTyping(true);
       }, 10);
-
+      const answers = await reply(val);
       // 模拟回复消息
       setTimeout(() => {
-        appendMsg({
-          type: "text",
-          content: { text: "暂时无法解答，您可以反馈问题，开发会及时帮您解决" },
+        if (!answers || !answers?.length) {
+          appendMsg({
+            type: "text",
+            content: {
+              text: "暂时无法解答，您可以反馈问题，开发会及时帮您解决",
+            },
+            user: {
+              avatar: chatAvatar,
+            },
+            createdAt: Date.now(),
+            hasTime: true,
+          });
+
+          setTyping(false);
+          return;
+        }
+        answers?.forEach((answer: any) => {
+          appendMsg({
+            type: "text",
+            content: { text: answer?.textValue },
+          });
         });
       }, 1000);
     }
   }
 
+  async function handleGuess(guess: IGuessQuestion) {
+    handleSend("text", guess.textValue);
+    answerCountPlus(guess.id);
+  }
+
   // 快捷短语回调，可根据 item 数据做出不同的操作，这里以发送文本消息为例
   function handleQuickReplyClick(item: QuickReplyItemProps) {
     handleSend("text", item.name);
-
     if (item.code === "q1") {
       replace([
         {
@@ -345,31 +403,16 @@ export default () => {
               </div>
               <FlexItem>
                 <List>
-                  <ListItem
-                    content="登录遇到问题"
-                    as="a"
-                    rightIcon="chevron-right"
-                  />
-                  <ListItem
-                    content="登录遇到问题"
-                    as="a"
-                    rightIcon="chevron-right"
-                  />
-                  <ListItem
-                    content="登录遇到问题"
-                    as="a"
-                    rightIcon="chevron-right"
-                  />
-                  <ListItem
-                    content="我遇到了其他问题"
-                    as="a"
-                    rightIcon="chevron-right"
-                  />
-                  <ListItem
-                    content="我遇到了其他问题"
-                    as="a"
-                    rightIcon="chevron-right"
-                  />
+                  {guessQuestion?.map((guess) => {
+                    return (
+                      <ListItem
+                        content={guess?.standardQuestion}
+                        as="a"
+                        rightIcon="chevron-right"
+                        onClick={() => handleGuess(guess)}
+                      />
+                    );
+                  })}
                 </List>
               </FlexItem>
             </Flex>
@@ -424,7 +467,7 @@ export default () => {
             title: "智能客服",
           }}
           rightAction={{
-            icon: "compass",
+            icon: "keyboard-circle",
             onClick: (e) => {
               navigate("/suggestion");
             },
