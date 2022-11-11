@@ -217,18 +217,73 @@ export default () => {
           setTyping(false);
           return;
         }
-        answers?.forEach((answer: any) => {
+        if (
+          answers.length === 1 &&
+          answers[0].dataType.toLowerCase() === "text"
+        ) {
+          const answer = answers[0];
           appendMsg({
-            type: "text",
-            content: { text: answer?.textValue },
+            type: answer.dataType.toLowerCase(),
+            content: {
+              text: answer?.textValue,
+            },
+            user: {
+              avatar: chatAvatar,
+            },
+            createdAt: Date.now(),
+            hasTime: true,
           });
+          return;
+        }
+        appendMsg({
+          type: "answers",
+          content: {
+            text: answers,
+          },
+          user: {
+            avatar: chatAvatar,
+          },
+          createdAt: Date.now(),
+          hasTime: true,
         });
+        // const hrefArr: any[] = [];
+        // answers?.forEach((answer: any) => {
+        //   console.log(answer);
+        //   if (answer.dataType.toLowerCase() === "href") {
+        //     hrefArr.push(answer);
+        //   } else {
+        //     appendMsg({
+        //       type: answer.dataType.toLowerCase(),
+        //       content: {
+        //         text: answer?.textValue,
+        //       },
+        //       user: {
+        //         avatar: chatAvatar,
+        //       },
+        //       createdAt: Date.now(),
+        //       hasTime: true,
+        //     });
+        //   }
+        // });
+        // if (hrefArr.length) {
+        //   appendMsg({
+        //     type: "href",
+        //     content: {
+        //       text: hrefArr,
+        //     },
+        //     user: {
+        //       avatar: chatAvatar,
+        //     },
+        //     createdAt: Date.now(),
+        //     hasTime: true,
+        //   });
+        // }
       }, 1000);
     }
   }
 
   async function handleGuess(guess: IGuessQuestion) {
-    handleSend("text", guess.textValue);
+    handleSend("text", guess.standardQuestion);
     answerCountPlus(guess.id);
   }
 
@@ -355,6 +410,7 @@ export default () => {
 
   function renderMessageContent(msg: MessageProps) {
     const { type, content } = msg;
+    console.log("first", msg);
     // 根据消息类型来渲染
     switch (type) {
       case "help":
@@ -439,8 +495,66 @@ export default () => {
             <img src={content.picUrl} alt="" />
           </Bubble>
         );
-      default:
-        return null;
+      case "answers":
+        return (
+          <List>
+            {content?.text?.map((t: any) => {
+              if (t.dataType.toLowerCase() === "href") {
+                return (
+                  <ListItem
+                    content={t?.standardQuestion}
+                    as="a"
+                    rightIcon="chevron-right"
+                    onClick={() => {
+                      console.log(t);
+                      const w = window.open("_black"); //这里是打开新窗口
+                      let url =
+                        t?.textValue?.indexOf("http") !== -1
+                          ? t?.textValue
+                          : "http://www.baidu.com";
+                      w!.location.href = url; //这样就可以跳转了
+                    }}
+                  />
+                );
+              }
+              return (
+                <ListItem
+                  content={t?.standardQuestion}
+                  as="a"
+                  rightIcon="chevron-right"
+                  onClick={() => {
+                    appendMsg({
+                      type: "text",
+                      content: { text: t?.standardQuestion },
+                      position: "right",
+                      user: {
+                        avatar: meAvatar,
+                      },
+                      createdAt: Date.now(),
+                      hasTime: true,
+                    });
+                    setTimeout(() => {
+                      setTyping(true);
+                    }, 10);
+                    setTimeout(() => {
+                      appendMsg({
+                        type: "text",
+                        content: {
+                          text: t?.textValue,
+                        },
+                        user: {
+                          avatar: chatAvatar,
+                        },
+                        createdAt: Date.now(),
+                        hasTime: true,
+                      });
+                    }, 1000);
+                  }}
+                ></ListItem>
+              );
+            })}
+          </List>
+        );
     }
   }
 
