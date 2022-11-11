@@ -28,8 +28,26 @@ import Chat, {
 } from "@chatui/core";
 import OrderSelector from "./OrdderSelector";
 import { useNavigate } from "react-router-dom";
+import { request } from "../utils/constant";
 
 type MessageWithoutId = Omit<MessageProps, "_id">;
+
+// fetch("http://150.158.33.124:1234/faq/management/list", {
+//   method: "GET",
+//   cache: "no-cache",
+// })
+//   .then((res) => {
+//     return res.json();
+//   })
+//   .then((data) => {
+//     console.log(data);
+//   });
+
+const data = await request({
+  url: "/management/list",
+  method: "get",
+});
+console.log(data);
 
 const skillArr = [
   {
